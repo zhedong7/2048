@@ -6,6 +6,11 @@ function GameManager(size, InputManager, Actuator, StorageManager) {
 
   this.startTiles     = 2;
 
+  // 智能消除：合成 >= blastThreshold 时，消掉场上 1 个值为 blastValue 的方块（孤立者优先）
+  this.blastThreshold = 16;
+  this.blastValue     = 2;
+  this.blastMaxTiles  = 1;
+
   this.inputManager.on("move", this.move.bind(this));
   this.inputManager.on("restart", this.restart.bind(this));
   this.inputManager.on("keepPlaying", this.keepPlaying.bind(this));
@@ -54,6 +59,8 @@ GameManager.prototype.setup = function () {
     this.addStartTiles();
   }
 
+  this.lastBlast = [];
+
   // Update the actuator
   this.actuate();
 };
@@ -93,7 +100,8 @@ GameManager.prototype.actuate = function () {
     over:       this.over,
     won:        this.won,
     bestScore:  this.storageManager.getBestScore(),
-    terminated: this.isGameTerminated()
+    terminated: this.isGameTerminated(),
+    blasted:    this.lastBlast
   });
 
 };
@@ -135,9 +143,10 @@ GameManager.prototype.move = function (direction) {
 
   var cell, tile;
 
-  var vector     = this.getVector(direction);
-  var traversals = this.buildTraversals(vector);
-  var moved      = false;
+  var vector       = this.getVector(direction);
+  var traversals   = this.buildTraversals(vector);
+  var moved        = false;
+  var blastPending = false;
 
   // Save the current tile positions and remove merger information
   this.prepareTiles();
@@ -166,6 +175,9 @@ GameManager.prototype.move = function (direction) {
           // Update the score
           self.score += merged.value;
 
+          // 大合成：稍后触发智能消除
+          if (merged.value >= self.blastThreshold) blastPending = true;
+
           // The mighty 2048 tile
           if (merged.value === 2048) self.won = true;
         } else {
@@ -180,6 +192,10 @@ GameManager.prototype.move = function (direction) {
   });
 
   if (moved) {
+    if (blastPending) {
+      this.smartBlast();
+    }
+
     this.addRandomTile();
 
     if (!this.movesAvailable()) {
@@ -188,6 +204,43 @@ GameManager.prototype.move = function (direction) {
 
     this.actuate();
   }
+};
+
+// 智能消除：每次消 1 个 2，优先挑「孤立」的（四邻无同值、最难合掉的），被消方块的值计入分数
+GameManager.prototype.smartBlast = function () {
+  var self       = this;
+  var candidates = [];
+
+  this.grid.eachCell(function (x, y, tile) {
+    if (tile && tile.value === self.blastValue && !tile.mergedFrom) {
+      var isolated = true;
+
+      for (var direction = 0; direction < 4; direction++) {
+        var vector = self.getVector(direction);
+        var next   = self.grid.cellContent({ x: x + vector.x, y: y + vector.y });
+
+        if (next && next.value === tile.value) {
+          isolated = false;
+          break;
+        }
+      }
+
+      candidates.push({ tile: tile, isolated: isolated });
+    }
+  });
+
+  // 孤立的排前面，同等情况下先发现先消
+  candidates.sort(function (a, b) {
+    return (b.isolated ? 1 : 0) - (a.isolated ? 1 : 0);
+  });
+
+  this.lastBlast = [];
+
+  candidates.slice(0, this.blastMaxTiles).forEach(function (entry) {
+    self.grid.removeTile(entry.tile);
+    self.score += entry.tile.value; // 消除奖励分
+    self.lastBlast.push(entry.tile);
+  });
 };
 
 // Get the vector representing the chosen direction

@@ -21,6 +21,13 @@ HTMLActuator.prototype.actuate = function (grid, metadata) {
       });
     });
 
+    // 被智能消除的方块：只做一次性消失动画，不在 grid 里
+    if (metadata.blasted) {
+      metadata.blasted.forEach(function (tile) {
+        self.addBlastedTile(tile);
+      });
+    }
+
     self.updateScore(metadata.score);
     self.updateBestScore(metadata.bestScore);
 
@@ -72,6 +79,7 @@ HTMLActuator.prototype.addTile = function (tile) {
     });
   } else if (tile.mergedFrom) {
     classes.push("tile-merged");
+    if (tile.value >= 16) classes.push("tile-blast-source"); // 大合成高亮脉冲
     this.applyClasses(wrapper, classes);
 
     // Render the tiles that merged
@@ -92,6 +100,23 @@ HTMLActuator.prototype.addTile = function (tile) {
 
 HTMLActuator.prototype.applyClasses = function (element, classes) {
   element.setAttribute("class", classes.join(" "));
+};
+
+// 渲染一个被智能消除的方块（停留在原地，播放消失动画后由下次渲染清掉）
+HTMLActuator.prototype.addBlastedTile = function (tile) {
+  var wrapper = document.createElement("div");
+  var inner   = document.createElement("div");
+  var classes = ["tile", "tile-" + tile.value, this.positionClass(tile), "tile-blasted"];
+
+  if (tile.value > 2048) classes.push("tile-super");
+
+  this.applyClasses(wrapper, classes);
+
+  inner.classList.add("tile-inner");
+  inner.textContent = tile.value;
+
+  wrapper.appendChild(inner);
+  this.tileContainer.appendChild(wrapper);
 };
 
 HTMLActuator.prototype.normalizePosition = function (position) {

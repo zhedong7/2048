@@ -2,8 +2,8 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: #faf8ef;
-  color: #776e65;
+  background: #1a1a2e;
+  color: #e8e8f0;
   font-family: "Clear Sans", "Helvetica Neue", Arial, sans-serif;
   font-size: 18px; }
 
@@ -53,7 +53,7 @@ h1.title {
 .score-container, .best-container {
   position: relative;
   display: inline-block;
-  background: #bbada0;
+  background: #16213e;
   padding: 15px 25px;
   font-size: 25px;
   height: 25px;
@@ -80,7 +80,7 @@ h1.title {
     font-size: 25px;
     line-height: 25px;
     font-weight: bold;
-    color: rgba(119, 110, 101, 0.9);
+    color: rgba(233, 69, 96, 0.9);
     z-index: 100;
     -webkit-animation: move-up 600ms ease-in;
     -moz-animation: move-up 600ms ease-in;
@@ -149,7 +149,7 @@ hr {
   -ms-user-select: none;
   -ms-touch-action: none;
   touch-action: none;
-  background: #bbada0;
+  background: #16213e;
   border-radius: 6px;
   width: 500px;
   height: 500px;
@@ -183,7 +183,7 @@ hr {
       margin-top: 59px; }
     .game-container .game-message a {
       display: inline-block;
-      background: #8f7a66;
+      background: #e94560;
       border-radius: 3px;
       padding: 0 20px;
       text-decoration: none;
@@ -220,7 +220,7 @@ hr {
   margin-right: 15px;
   float: left;
   border-radius: 3px;
-  background: rgba(238, 228, 218, 0.35); }
+  background: rgba(255, 255, 255, 0.08); }
   .grid-cell:last-child {
     margin-right: 0; }
 
@@ -324,6 +324,7 @@ hr {
   .tile .tile-inner {
     border-radius: 3px;
     background: #eee4da;
+    color: #776e65;
     text-align: center;
     font-weight: bold;
     z-index: 10;
@@ -519,7 +520,7 @@ hr {
 
 .restart-button {
   display: inline-block;
-  background: #8f7a66;
+  background: #e94560;
   border-radius: 3px;
   padding: 0 20px;
   text-decoration: none;
@@ -582,7 +583,7 @@ hr {
     -ms-user-select: none;
     -ms-touch-action: none;
     touch-action: none;
-    background: #bbada0;
+    background: #16213e;
     border-radius: 6px;
     width: 280px;
     height: 280px;
@@ -616,7 +617,7 @@ hr {
         margin-top: 59px; }
       .game-container .game-message a {
         display: inline-block;
-        background: #8f7a66;
+        background: #e94560;
         border-radius: 3px;
         padding: 0 20px;
         text-decoration: none;
@@ -653,7 +654,7 @@ hr {
     margin-right: 10px;
     float: left;
     border-radius: 3px;
-    background: rgba(238, 228, 218, 0.35); }
+    background: rgba(255, 255, 255, 0.08); }
     .grid-cell:last-child {
       margin-right: 0; }
 
@@ -756,3 +757,34 @@ hr {
     margin-top: 90px !important; }
   .game-message .lower {
     margin-top: 30px !important; } }
+
+/* ==== 智能消除特效 ==== */
+/* 被消方块：红色发光 → 放大 → 缩小消失 */
+@-webkit-keyframes blast {
+  0%   { opacity: 1; -webkit-transform: scale(1);    box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.8); }
+  35%  { opacity: 1; -webkit-transform: scale(1.25); box-shadow: 0 0 30px 12px rgba(233, 69, 96, 0.9); }
+  100% { opacity: 0; -webkit-transform: scale(0);    box-shadow: 0 0 0 0 rgba(233, 69, 96, 0); } }
+@keyframes blast {
+  0%   { opacity: 1; -webkit-transform: scale(1);    transform: scale(1);    box-shadow: 0 0 0 0 rgba(233, 69, 96, 0.8); }
+  35%  { opacity: 1; -webkit-transform: scale(1.25); transform: scale(1.25); box-shadow: 0 0 30px 12px rgba(233, 69, 96, 0.9); }
+  100% { opacity: 0; -webkit-transform: scale(0);    transform: scale(0);    box-shadow: 0 0 0 0 rgba(233, 69, 96, 0); } }
+
+.tile.tile-blasted .tile-inner {
+  z-index: 30;
+  background: #e94560;
+  color: #f9f6f2;
+  -webkit-animation: blast 450ms ease-in forwards;
+  animation: blast 450ms ease-in forwards; }
+
+/* 大合成方块：pop 之后接一次红色脉冲光晕 */
+@-webkit-keyframes blast-glow {
+  0%   { box-shadow: 0 0 30px 12px rgba(233, 69, 96, 0.9); }
+  100% { box-shadow: 0 0 30px 12px rgba(233, 69, 96, 0); } }
+@keyframes blast-glow {
+  0%   { box-shadow: 0 0 30px 12px rgba(233, 69, 96, 0.9); }
+  100% { box-shadow: 0 0 30px 12px rgba(233, 69, 96, 0); } }
+
+.tile.tile-blast-source .tile-inner {
+  z-index: 25;
+  -webkit-animation: pop 200ms ease 100ms backwards, blast-glow 600ms ease 100ms backwards;
+  animation: pop 200ms ease 100ms backwards, blast-glow 600ms ease 100ms backwards; }
